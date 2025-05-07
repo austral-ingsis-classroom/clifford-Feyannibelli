@@ -15,12 +15,16 @@ public class LsCommand implements Command {
 
   @Override
   public String execute() {
-    List<FileSystem> children = state.getCurrent().getChildren();
+    List<FileSystem> children = new ArrayList<>(state.getCurrent().getChildren());
+
     if (order.isPresent()) {
       Comparator<FileSystem> comparator = Comparator.comparing(FileSystem::getName);
-      if (order.get().equals("desc")) comparator = comparator.reversed();
-      children = children.stream().sorted(comparator).collect(Collectors.toList());
+      if (order.get().equals("desc")) {
+        comparator = comparator.reversed();
+      }
+      children.sort(comparator);
     }
+
     return children.stream().map(FileSystem::getName).collect(Collectors.joining(" "));
   }
 }

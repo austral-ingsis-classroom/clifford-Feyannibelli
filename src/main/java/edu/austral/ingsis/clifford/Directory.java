@@ -8,13 +8,17 @@ public final class Directory implements FileSystem {
   private final Directory parent;
 
   public Directory(String name, Directory parent) {
+    this(name, parent, new ArrayList<>());
+  }
+
+  Directory(String name, Directory parent, List<FileSystem> children) {
     this.name = name;
     this.parent = parent;
-    this.children = new ArrayList<>();
+    this.children = List.copyOf(children);
   }
 
   public List<FileSystem> getChildren() {
-    return new ArrayList<>(children);
+    return children;
   }
 
   public Optional<Directory> getParent() {
@@ -25,16 +29,20 @@ public final class Directory implements FileSystem {
     return children.stream().filter(c -> c.getName().equals(name)).findFirst();
   }
 
-  public void add(FileSystem fs) {
-    children.add(fs);
+  public Directory addChild(FileSystem fs) {
+    List<FileSystem> newChildren = new ArrayList<>(children);
+    newChildren.add(fs);
+    return new Directory(name, parent, newChildren);
   }
 
-  public void remove(FileSystem fs) {
-    children.remove(fs);
+  public Directory removeChild(FileSystem fs) {
+    List<FileSystem> newChildren = new ArrayList<>(children);
+    newChildren.remove(fs);
+    return new Directory(name, parent, newChildren);
   }
 
-  public void clear() {
-    children.clear();
+  public Directory removeAllChildren() {
+    return new Directory(name, parent, new ArrayList<>());
   }
 
   @Override

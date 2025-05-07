@@ -2,39 +2,42 @@ package edu.austral.ingsis.clifford.commands;
 
 import edu.austral.ingsis.clifford.*;
 
-public class RmCommand implements Command {
+public class RmCommand implements StateUpdatingCommand {
   private final String name;
   private final boolean recursive;
   private final FileSystemState state;
+  private FileSystemState updatedState;
 
   public RmCommand(String name, boolean recursive, FileSystemState state) {
     this.name = name;
     this.recursive = recursive;
     this.state = state;
+    this.updatedState = state;
   }
 
   @Override
   public String execute() {
     Directory current = state.getCurrent();
-    var child = current.getChild(name);
-    if (child.isEmpty()) return "'" + name + "' does not exist";
-    FileSystem target = child.get();
+    var childOption = current.getChild(name);
 
-    if (target.isDirectory()) {
-      if (!recursive) return "cannot remove '" + name + "', is a directory";
-      removeDirectoryRecursively((Directory) target);
+    if (childOption.isEmpty()) {
+      return "'" + name + "' does not exist";
     }
 
-    current.remove(target);
+    FileSystem target = childOption.get();
+
+    if (target.isDirectory() && !recursive) {
+      return "cannot remove '" + name + "', is a directory";
+    }
+
+    Directory updatedCurrent = current.removeChild(target);
+    updatedState = state.withUpdatedDirectory(current, updatedCurrent);
+
     return "'" + name + "' removed";
   }
 
-  private void removeDirectoryRecursively(Directory dir) {
-    for (FileSystem child : dir.getChildren()) {
-      if (child.isDirectory()) {
-        removeDirectoryRecursively((Directory) child);
-      }
-    }
-    dir.clear();
+  @Override
+  public FileSystemState getUpdatedState() {
+    return updatedState;
   }
 }
