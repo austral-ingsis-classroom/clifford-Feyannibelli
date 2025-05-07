@@ -15,17 +15,17 @@ public class CdCommand implements StateUpdatingCommand {
 
   @Override
   public String execute() {
-    // Handle special case for current directory
     if (path.equals(".")) {
       return "moved to directory '" + state.getCurrent().getName() + "'";
     }
 
-    // Handle special case for parent directory
     if (path.equals("..")) {
       Directory current = state.getCurrent();
       if (current.getParent().isPresent()) {
         updatedState = state.withCurrent(current.getParent().get());
+        return "moved to directory '" + updatedState.getCurrent().getName() + "'";
       }
+      updatedState = state.withCurrent(state.getRoot());
       return "moved to directory '/'";
     }
 
@@ -36,11 +36,13 @@ public class CdCommand implements StateUpdatingCommand {
         return "moved to directory '/'";
       }
 
-      // Process absolute path (skip the first '/')
       return navigatePath(state.getRoot(), path.substring(1));
     }
 
-    // Handle relative path with directory components
+    if (path.contains("/")) {
+      return navigatePath(state.getRoot(), path);
+    }
+
     return navigatePath(state.getCurrent(), path);
   }
 
@@ -48,9 +50,7 @@ public class CdCommand implements StateUpdatingCommand {
     Directory current = startDir;
     String[] parts = relativePath.split("/");
 
-    for (int i = 0; i < parts.length; i++) {
-      String part = parts[i];
-
+    for (String part : parts) {
       if (part.isEmpty() || part.equals(".")) {
         continue;
       }
@@ -75,7 +75,6 @@ public class CdCommand implements StateUpdatingCommand {
       current = (Directory) child;
     }
 
-    // Successfully navigated to target directory
     updatedState = state.withCurrent(current);
     return "moved to directory '" + current.getName() + "'";
   }
